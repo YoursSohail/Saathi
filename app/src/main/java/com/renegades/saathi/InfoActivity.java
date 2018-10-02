@@ -17,6 +17,7 @@ public class InfoActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_info);
+        getSupportActionBar().setTitle("Basic Information");
         tvName = findViewById(R.id.tvName);
         tvDoB = findViewById(R.id.tvDoB);
         tvGender = findViewById(R.id.tvGender);

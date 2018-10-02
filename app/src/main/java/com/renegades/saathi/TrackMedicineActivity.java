@@ -8,6 +8,7 @@ import android.location.Location;
 
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
@@ -19,6 +20,8 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -30,6 +33,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 
@@ -40,6 +47,7 @@ public class TrackMedicineActivity extends AppCompatActivity implements Location
     Bitmap imageBitmap;
     protected LocationManager locationManager;
     protected LocationListener locationListener;
+    String URL = "http://142.93.223.238/profile/";
     protected Context context;
     TextView txtLat;
     String lat;
@@ -53,6 +61,7 @@ public class TrackMedicineActivity extends AppCompatActivity implements Location
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_track_medicine);
+        getSupportActionBar().setTitle("Track Medicine");
 
         defaultText = findViewById(R.id.deafultText);
         fabAdd = findViewById(R.id.fabAdd);
@@ -91,27 +100,40 @@ public class TrackMedicineActivity extends AppCompatActivity implements Location
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            Bundle extras = data.getExtras();
-            imageBitmap = (Bitmap) extras.get("data");
+            Uri imageUri = data.getData();
 
-            if(imageBitmap!=null){
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                imageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
-                byte[] profileImage = outputStream.toByteArray();
 
-                imgString = Base64.encodeToString(profileImage,
-                        Base64.DEFAULT);
-                Toast.makeText(TrackMedicineActivity.this, imgString, Toast.LENGTH_SHORT).show();
+//            if(imageBitmap!=null){
+//                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+//                imageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+//                byte[] profileImage = outputStream.toByteArray();
+//
+//                imgString = Base64.encodeToString(profileImage,
+//                        Base64.DEFAULT);
+//                Toast.makeText(TrackMedicineActivity.this, imgString, Toast.LENGTH_SHORT).show();
+//
+//                sendData();
+//            }else{
+//                imgString ="";
+//            }
 
-                sendData();
-            }else{
-                imgString ="";
+            try {
+                Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(),imageUri);
+                sendData(bitmap);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-
 
         }
 
 
+    }
+    public byte[] getFileDataFromDrawable(Bitmap bitmap) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 80, byteArrayOutputStream);
+        return byteArrayOutputStream.toByteArray();
     }
 
 
@@ -124,40 +146,75 @@ public class TrackMedicineActivity extends AppCompatActivity implements Location
 
     }
 
-    private void sendData() {
-        try{
-            RequestQueue requestQueue = Volley.newRequestQueue(this);
-            String URL = "http://142.93.223.238/profile/";
-            JSONObject jsonObject = new JSONObject();
-            String timeStamp = String.valueOf(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()));
-            jsonObject.put("photo",imgString);
-            jsonObject.put("loc",""+latitude+" "+longitude);
-            jsonObject.put("timestamp",timeStamp);
-            jsonObject.put("name","Sohail");
+    private void sendData(final Bitmap bitmap) {
+        final String timeStamp = String.valueOf(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()));
+//        try{
+//            RequestQueue requestQueue = Volley.newRequestQueue(this);
+//            String URL = "http://142.93.223.238/profile/";
+//            JSONObject jsonObject = new JSONObject();
+//            String timeStamp = String.valueOf(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()));
+//            jsonObject.put("photo",imgString);
+//            jsonObject.put("loc",""+latitude+" "+longitude);
+//            jsonObject.put("timestamp",timeStamp);
+//            jsonObject.put("name","Sohail");
+//
+//
+//            Log.i("BASE64",imgString);
+//            Log.i("loc",""+latitude+" "+longitude);
+//            Log.i("timestamp",timeStamp);
+//            Log.i("name","Sohail");
+//
+//            requestbody = jsonObject.toString();
+//
+//            StringRequest stringRequest = new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
+//                @Override
+//                public void onResponse(String response) {
+//                    Log.i("RESPONSE", response);
+//                }
+//            }, new Response.ErrorListener() {
+//                @Override
+//                public void onErrorResponse(VolleyError error) {
+//                    Log.e("RESPONSE",error.toString());
+//                }
+//            });
+//            requestQueue.add(stringRequest);
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
 
+        VolleyMultipartRequest volleyMultipartRequest = new VolleyMultipartRequest(Request.Method.POST, URL,
+                new Response.Listener<NetworkResponse>() {
+                    @Override
+                    public void onResponse(NetworkResponse response) {
+                        try {
+                            JSONObject obj = new JSONObject(new String(response.data));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
 
-            Log.i("BASE64",imgString);
-            Log.i("loc",""+latitude+" "+longitude);
-            Log.i("timestamp",timeStamp);
-            Log.i("name","Sohail");
+            }
+        }){
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String, String> params = new HashMap<>();
+                params.put("loc", ""+latitude+" "+longitude);
+                params.put("timestamp",timeStamp);
+                params.put("name","Sohail");
+                return params;
+            }
+            protected Map<String, DataPart> getByteData() {
+                Map<String, DataPart> params = new HashMap<>();
+                long imagename = System.currentTimeMillis();
+                params.put("pic", new DataPart(imagename + ".png", getFileDataFromDrawable(bitmap)));
+                return params;
+            }
+        };
 
-            requestbody = jsonObject.toString();
-
-            StringRequest stringRequest = new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
-                @Override
-                public void onResponse(String response) {
-                    Log.i("RESPONSE", response);
-                }
-            }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Log.e("RESPONSE",error.toString());
-                }
-            });
-            requestQueue.add(stringRequest);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        Volley.newRequestQueue(this).add(volleyMultipartRequest);
     }
 
     @Override

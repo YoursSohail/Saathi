@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.provider.Settings;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
@@ -42,30 +43,36 @@ public class PredictionActivity extends AppCompatActivity {
     String doctorType;
     private RequestQueue mQueue;
     TextView tvCause;
+    Button btDoctors;
     private ArrayList<String> mEntries;
     ArrayList<String>causeList;
     ArrayList<String>accuracyList;
-
     SpeechRecognizer mSpeechRecognizer;
     Intent mSpeechRecognizerIntent;
-    ProgressDialog progressDialog;
+    ProgressDialog progressDialog,doctorssearch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_prediction);
+        getSupportActionBar().setTitle("Quick Diagnose");
 
         checkPermission();
 
         causeList = new ArrayList<>();
         accuracyList = new ArrayList<>();
 
+        doctorssearch = new ProgressDialog(this);
+        doctorssearch.setMessage("Searching for doctors...");
+        doctorssearch.setTitle("Searching");
         progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Fetching causes...");
         progressDialog.setTitle("Fetching");
 
 
         etSymptoms = findViewById(R.id.etSymptoms);
+        btDoctors = findViewById(R.id.btDoctors);
+        btDoctors.setVisibility(View.INVISIBLE);
         tvCause = findViewById(R.id.tvCause);
         ivSpeak = findViewById(R.id.ivSpeak);
         btDiagnose = findViewById(R.id.btDiagonse);
@@ -79,6 +86,22 @@ public class PredictionActivity extends AppCompatActivity {
         Intent intent = getIntent();
         yob = intent.getStringExtra("yob");
         gender = intent.getStringExtra("gender");
+
+        btDoctors.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                doctorssearch.show();
+                final Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        startActivity(new Intent(PredictionActivity.this,DoctorListActivity.class));
+                        doctorssearch.dismiss();
+                    }
+                },200);
+
+            }
+        });
 
 
         mSpeechRecognizer.setRecognitionListener(new RecognitionListener() {
@@ -181,7 +204,7 @@ public class PredictionActivity extends AppCompatActivity {
 
     private void jsonParse(final String st) {
 
-        String url = "https://healthservice.priaid.ch/symptoms?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InNpZGRoYXJ0aGNvb2xzMTJAZ21haWwuY29tIiwicm9sZSI6IlVzZXIiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiI0NzQiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3ZlcnNpb24iOiIxMDgiLCJodHRwOi8vZXhhbXBsZS5vcmcvY2xhaW1zL2xpbWl0IjoiMTA1IiwiaHR0cDovL2V4YW1wbGUub3JnL2NsYWltcy9tZW1iZXJzaGlwIjoiQmFzaWMiLCJodHRwOi8vZXhhbXBsZS5vcmcvY2xhaW1zL2xhbmd1YWdlIjoiZW4tZ2IiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL2V4cGlyYXRpb24iOiIyMDk5LTEyLTMxIiwiaHR0cDovL2V4YW1wbGUub3JnL2NsYWltcy9tZW1iZXJzaGlwc3RhcnQiOiIyMDAwLTAxLTAxIiwiaXNzIjoiaHR0cHM6Ly9hdXRoc2VydmljZS5wcmlhaWQuY2giLCJhdWQiOiJodHRwczovL2hlYWx0aHNlcnZpY2UucHJpYWlkLmNoIiwiZXhwIjoxNTM4NDQ2MjQ4LCJuYmYiOjE1Mzg0MzkwNDh9.RBs6PUU01cmgf5x49K1_vF5xMfbMqfOrjS6l-qwcjnk&format=json&language=en-gb";
+        String url = "https://healthservice.priaid.ch/symptoms?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InNpZGRoYXJ0aGNvb2xzMTJAZ21haWwuY29tIiwicm9sZSI6IlVzZXIiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiI0NzQiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3ZlcnNpb24iOiIxMDgiLCJodHRwOi8vZXhhbXBsZS5vcmcvY2xhaW1zL2xpbWl0IjoiMTA1IiwiaHR0cDovL2V4YW1wbGUub3JnL2NsYWltcy9tZW1iZXJzaGlwIjoiQmFzaWMiLCJodHRwOi8vZXhhbXBsZS5vcmcvY2xhaW1zL2xhbmd1YWdlIjoiZW4tZ2IiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL2V4cGlyYXRpb24iOiIyMDk5LTEyLTMxIiwiaHR0cDovL2V4YW1wbGUub3JnL2NsYWltcy9tZW1iZXJzaGlwc3RhcnQiOiIyMDAwLTAxLTAxIiwiaXNzIjoiaHR0cHM6Ly9hdXRoc2VydmljZS5wcmlhaWQuY2giLCJhdWQiOiJodHRwczovL2hlYWx0aHNlcnZpY2UucHJpYWlkLmNoIiwiZXhwIjoxNTM4NDgzNDI5LCJuYmYiOjE1Mzg0NzYyMjl9.SJ0k-4keP9I0p5PPrgzSbV6OkJMw-YVKSIzRefmsBUg&format=json&language=en-gb";
         JsonArrayRequest request = new JsonArrayRequest(url,
                 new Response.Listener<JSONArray>() {
                     @Override
@@ -224,7 +247,7 @@ public class PredictionActivity extends AppCompatActivity {
 
 
 
-        String url = "https://healthservice.priaid.ch/diagnosis?symptoms=["+id+"]&gender="+gender+"&year_of_birth="+yob+"&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InNpZGRoYXJ0aGNvb2xzMTJAZ21haWwuY29tIiwicm9sZSI6IlVzZXIiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiI0NzQiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3ZlcnNpb24iOiIxMDgiLCJodHRwOi8vZXhhbXBsZS5vcmcvY2xhaW1zL2xpbWl0IjoiMTA1IiwiaHR0cDovL2V4YW1wbGUub3JnL2NsYWltcy9tZW1iZXJzaGlwIjoiQmFzaWMiLCJodHRwOi8vZXhhbXBsZS5vcmcvY2xhaW1zL2xhbmd1YWdlIjoiZW4tZ2IiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL2V4cGlyYXRpb24iOiIyMDk5LTEyLTMxIiwiaHR0cDovL2V4YW1wbGUub3JnL2NsYWltcy9tZW1iZXJzaGlwc3RhcnQiOiIyMDAwLTAxLTAxIiwiaXNzIjoiaHR0cHM6Ly9hdXRoc2VydmljZS5wcmlhaWQuY2giLCJhdWQiOiJodHRwczovL2hlYWx0aHNlcnZpY2UucHJpYWlkLmNoIiwiZXhwIjoxNTM4NDQ2NTcxLCJuYmYiOjE1Mzg0MzkzNzF9.QKt1XpThMfxrIGyFFLH3O2YDc2bghcqADgnT0tnt2kc&format=json&language=en-gb";
+        String url = "https://healthservice.priaid.ch/diagnosis?symptoms=["+id+"]&gender="+gender+"&year_of_birth="+yob+"&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InNpZGRoYXJ0aGNvb2xzMTJAZ21haWwuY29tIiwicm9sZSI6IlVzZXIiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiI0NzQiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3ZlcnNpb24iOiIxMDgiLCJodHRwOi8vZXhhbXBsZS5vcmcvY2xhaW1zL2xpbWl0IjoiMTA1IiwiaHR0cDovL2V4YW1wbGUub3JnL2NsYWltcy9tZW1iZXJzaGlwIjoiQmFzaWMiLCJodHRwOi8vZXhhbXBsZS5vcmcvY2xhaW1zL2xhbmd1YWdlIjoiZW4tZ2IiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL2V4cGlyYXRpb24iOiIyMDk5LTEyLTMxIiwiaHR0cDovL2V4YW1wbGUub3JnL2NsYWltcy9tZW1iZXJzaGlwc3RhcnQiOiIyMDAwLTAxLTAxIiwiaXNzIjoiaHR0cHM6Ly9hdXRoc2VydmljZS5wcmlhaWQuY2giLCJhdWQiOiJodHRwczovL2hlYWx0aHNlcnZpY2UucHJpYWlkLmNoIiwiZXhwIjoxNTM4NDgzNDgwLCJuYmYiOjE1Mzg0NzYyODB9.so1L0UcQ6fm2oqpP1dMnholjFB6hitqiqjVk9w3cu-0&format=json&language=en-gb";
 
         JsonArrayRequest request = new JsonArrayRequest(url,
                 new Response.Listener<JSONArray>() {
@@ -252,7 +275,8 @@ public class PredictionActivity extends AppCompatActivity {
                             cause = cause +" " +name;
 
 
-                            tvCause.setText("Causes - "+cause+"\n Specialist - "+doctorType);
+                            tvCause.setText("Causes - "+cause+"\n\nSpecialist - "+doctorType);
+                            btDoctors.setVisibility(View.VISIBLE);
                             progressDialog.dismiss();
 
 
